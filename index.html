@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - School Project</title>
+    <style>
+        body {
+            height: 100vh;
+            display: flex;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            background: url('nature.jpeg') no-repeat center center fixed;
+            background-size: cover;
+            justify-content: center;
+            align-items: center;
+            color: white;
+        }
+        .lessons-container {
+            max-width: 600px;
+            width: 100%;
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 0 10px black;
+        }
+        .student-row {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .submit {
+            width: auto;
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 0;
+            font-weight: 900;
+            background: white;
+            cursor: pointer;
+            color: black;
+        }
+        .submit:hover {
+            box-shadow: 0 0 9px rgba(255, 255, 255, 0.662);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lessons-container">
+        <h2>Admin Panel - Pending Students</h2>
+        <p>අනුමත කිරීමට බලාපොරොත්තුවෙන් සිටින සිසුන් ලැයිස්තුව:</p>
+        <hr style="border: 1px solid rgba(255,255,255,0.2); margin-bottom: 20px;">
+        
+        <div id="pending-students-list">
+            <p>Loading students...</p>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // ඔයාගේ Firebase Config දත්ත
+        const firebaseConfig = {
+            apiKey: "AIzaSyCmciwmEbSDgA5PhCY12a_vKqXl4GDBeZ8",
+            authDomain: "school-project-5fe93.firebaseapp.com",
+            projectId: "school-project-5fe93",
+            storageBucket: "school-project-5fe93.firebasestorage.app",
+            messagingSenderId: "548925209782",
+            appId: "1:548925209782:web:cea0aac7d41a510b2fba17",
+            measurementId: "G-5MG8T54708"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // status එක 'pending' අය විතරක් ඩේටාබේස් එකෙන් ලයිව් ඇදලා ගන්නවා
+        const q = query(collection(db, "users"), where("status", "==", "pending"));
+        
+        onSnapshot(q, (querySnapshot) => {
+            const listDiv = document.getElementById("pending-students-list");
+            listDiv.innerHTML = ""; 
+
+            if(querySnapshot.empty) {
+                listDiv.innerHTML = "<p style='color: #ccc;'>දැනට අනුමත කිරීමට සිසුන් කිසිවෙක් නැත.</p>";
+                return;
+            }
+
+            querySnapshot.forEach((docSnap) => {
+                const student = docSnap.data();
+                const studentId = docSnap.id;
+
+                const studentRow = document.createElement("div");
+                studentRow.className = "student-row";
+
+                studentRow.innerHTML = `
+                    <div style="text-align: left;">
+                        <strong>Name:</strong> ${student.username} <br>
+                        <strong>Email:</strong> ${student.email}
+                    </div>
+                    <button class="submit" onclick="approveStudent('${studentId}')">Approve</button>
+                `;
+                listDiv.appendChild(studentRow);
+            });
+        });
+
+        // Approve බටන් එක එබුවම ක්‍රියාත්මක වන Function එක
+        window.approveStudent = async function(studentId) {
+            try {
+                const userRef = doc(db, "users", studentId);
+                await updateDoc(userRef, {
+                    status: "approved"
+                });
+                alert("ශිෂ්‍යයා සාර්ථකව අනුමත කරන ලදී!");
+            } catch (error) {
+                alert("Error approving student: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
